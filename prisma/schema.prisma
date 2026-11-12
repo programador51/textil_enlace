@@ -1,0 +1,143 @@
+// TextilEnlace guarda talleres, textos de orientación y conexiones.
+// No guarda tarifas, costos, márgenes ni totales. La cotización
+// la hace cada taller, fuera de este sistema.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum WorkshopSize {
+  CHICO
+  MEDIANO
+}
+
+enum DesignClass {
+  POCOS_COLORES
+  FOTO
+  NOMBRE_NUMERO
+  SIN_ARCHIVO
+}
+
+enum FabricTone {
+  CLARA
+  OSCURA
+  SIN_DATO
+}
+
+model Workshop {
+  id           String        @id @default(cuid())
+  email        String        @unique
+  passwordHash String
+  name         String
+  size         WorkshopSize
+  zone         String
+  contactName  String
+  phone        String
+  phrase       String
+  published    Boolean       @default(true)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  processes    WorkshopProcess[]
+  garments     WorkshopGarment[]
+  deliveries   Delivery[]
+}
+
+model Process {
+  id         String                   @id @default(cuid())
+  slug       String                   @unique
+  name       String
+  custom     Boolean                  @default(false)
+  sortOrder  Int                      @default(0)
+  workshops  WorkshopProcess[]
+  rules      OrientationRuleProcess[]
+}
+
+model WorkshopProcess {
+  workshopId String
+  processId  String
+  workshop   Workshop @relation(fields: [workshopId], references: [id], onDelete: Cascade)
+  process    Process  @relation(fields: [processId], references: [id], onDelete: Cascade)
+
+  @@id([workshopId, processId])
+}
+
+model Garment {
+  id        String            @id @default(cuid())
+  slug      String            @unique
+  name      String
+  sortOrder Int
+  workshops WorkshopGarment[]
+}
+
+model WorkshopGarment {
+  workshopId String
+  garmentId  String
+  workshop   Workshop @relation(fields: [workshopId], references: [id], onDelete: Cascade)
+  garment    Garment  @relation(fields: [garmentId], references: [id], onDelete: Cascade)
+
+  @@id([workshopId, garmentId])
+}
+
+model OrientationRule {
+  id          String                   @id @default(cuid())
+  slug        String                   @unique
+  title       String
+  explanation String
+  conditions  Json
+  sortOrder   Int
+  processes   OrientationRuleProcess[]
+}
+
+model OrientationRuleProcess {
+  ruleId    String
+  processId String
+  rule      OrientationRule @relation(fields: [ruleId], references: [id], onDelete: Cascade)
+  process   Process         @relation(fields: [processId], references: [id], onDelete: Cascade)
+
+  @@id([ruleId, processId])
+}
+
+model Request {
+  id              String               @id @default(cuid())
+  folio           String               @unique
+  garmentSlug     String
+  garmentLabel    String
+  quantity        Int
+  designClass     DesignClass
+  fabric          FabricTone
+  neededBy        DateTime             @db.Date
+  zone            String
+  note            String?
+  customerName    String
+  customerContact String
+  createdAt       DateTime             @default(now())
+  orientations    RequestOrientation[]
+  deliveries      Delivery[]
+}
+
+model RequestOrientation {
+  id          String  @id @default(cuid())
+  requestId   String
+  title       String
+  explanation String
+  sortOrder   Int
+  request     Request @relation(fields: [requestId], references: [id], onDelete: Cascade)
+}
+
+model Delivery {
+  id         String   @id @default(cuid())
+  requestId  String
+  workshopId String
+  sentAt     DateTime @default(now())
+  request    Request  @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  workshop   Workshop @relation(fields: [workshopId], references: [id], onDelete: Cascade)
+
+  @@unique([requestId, workshopId])
+  @@index([workshopId])
+}

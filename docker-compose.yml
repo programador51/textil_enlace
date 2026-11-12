@@ -1,0 +1,40 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: textilenlace
+      POSTGRES_PASSWORD: textilenlace
+      POSTGRES_DB: textilenlace
+    ports:
+      - "5432:5432"
+    volumes:
+      - textilenlace_pg:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U textilenlace -d textilenlace"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    ports:
+      - "3000:3000"
+    environment:
+      DATABASE_URL: postgresql://textilenlace:textilenlace@db:5432/textilenlace?schema=public
+      DIRECT_URL: postgresql://textilenlace:textilenlace@db:5432/textilenlace?schema=public
+      AUTH_SECRET: dev-only-secret-change-me-please
+      NEXT_PUBLIC_APP_URL: http://localhost:3000
+      WATCHPACK_POLLING: "true"
+      CHOKIDAR_USEPOLLING: "true"
+    volumes:
+      - .:/app
+      - web_node_modules:/app/node_modules
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  textilenlace_pg:
+  web_node_modules:
