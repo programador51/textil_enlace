@@ -45,14 +45,82 @@ function refineRequest(
   }
 }
 
-export const previewSchema = z.object(requestFields).superRefine(refineRequest);
+const artColorSchema = z.object({
+  name: z.string().trim().min(1).max(40),
+  slug: z.string().trim().min(1).max(40),
+  hex: z.string().regex(/^#[0-9a-fA-F]{6}$/),
+  fine: z.boolean(),
+});
+
+const recipeStepSchema = z.object({
+  order: z.number().int().min(1).max(20),
+  name: z.string().trim().min(1).max(60),
+  mesh: z.string().trim().max(40),
+  passes: z.number().int().min(1).max(8).nullable(),
+  kind: z.enum(["base", "flash", "ink"]),
+});
+
+export const artHintSchema = z
+  .object({
+    kind: z.enum(["PLANAS", "SIMPLIFICA", "CMYK", "NO_ENTRA"]),
+    inkCount: z.number().int().min(0).max(6),
+    reason: z.string().trim().min(1).max(400),
+    fabric: z.enum(["CLARA", "OSCURA"]),
+  })
+  .nullable();
+
+export const artSchema = z
+  .object({
+    fileName: z.string().trim().min(1).max(120),
+    mimeType: z.string().trim().min(1).max(80),
+    sourceBase64: z.string().min(20).max(2_200_000),
+    previewBase64: z.string().min(20).max(800_000),
+    kind: z.enum(["PLANAS", "SIMPLIFICA", "CMYK", "NO_ENTRA"]),
+    reason: z.string().trim().min(1).max(400),
+    fabric: z.enum(["CLARA", "OSCURA"]),
+    inkCount: z.number().int().min(0).max(6),
+    widthCm: z.number().min(1).max(60),
+    heightCm: z.number().min(1).max(60),
+    dpi: z.number().int().min(72).max(300),
+    chokeMm: z.number().min(0).max(5),
+    colors: z.array(artColorSchema).max(6),
+    recipe: z.array(recipeStepSchema).max(12),
+  })
+  .superRefine((value, ctx) => {
+    const issue = ctx as { addIssue: (issue: { code: "custom"; message: string; path: string[] }) => void };
+    if (value.kind === "NO_ENTRA") return;
+    if (value.colors.length !== value.inkCount || value.inkCount < 1) {
+      issue.addIssue({ code: "custom", message: "Las tintas del archivo no cierran.", path: ["colors"] });
+    }
+    if (value.recipe.length < 1) {
+      issue.addIssue({ code: "custom", message: "Falta la receta de las capas.", path: ["recipe"] });
+    }
+  });
+
+export const previewSchema = z
+  .object({
+    ...requestFields,
+    artHint: artHintSchema.optional(),
+  })
+  .superRefine(refineRequest);
 
 export const requestSchema = z
   .object({
     ...requestFields,
     workshopIds: z.array(z.string().min(1)).min(1, "Elige al menos un taller.").max(12),
+    art: artSchema.nullable().optional(),
   })
   .superRefine(refineRequest);
+
+export const printRuleSchema = z.object({
+  baseMesh: z.string().trim().min(1, "Escribe los hilos de la base.").max(40),
+  basePasses: z.number().int().min(1).max(8),
+  colorMesh: z.string().trim().min(1, "Escribe los hilos de las tintas.").max(40),
+  colorPasses: z.number().int().min(1).max(8),
+  fineMesh: z.string().trim().min(1, "Escribe los hilos del detalle fino.").max(40),
+  fineThresholdMm: z.number().min(0.1).max(3),
+  inkNamesText: z.string().max(1000).default(""),
+});
 
 const phone = z
   .string()

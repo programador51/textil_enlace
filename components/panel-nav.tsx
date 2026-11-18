@@ -7,6 +7,7 @@ import { logoutWorkshop } from "@/app/actions/workshop";
 const links = [
   { href: "/taller", label: "Resumen" },
   { href: "/taller/ficha", label: "Mi ficha" },
+  { href: "/taller/receta", label: "Receta" },
   { href: "/taller/solicitudes", label: "Solicitudes" },
 ];
 

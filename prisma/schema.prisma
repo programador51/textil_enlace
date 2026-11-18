@@ -1,4 +1,5 @@
-// TextilEnlace guarda talleres, textos de orientación y conexiones.
+// TextilEnlace guarda talleres, textos de orientación, conexiones
+// y, si hubo logo, las capas de tintas planas.
 // No guarda tarifas, costos, márgenes ni totales. La cotización
 // la hace cada taller, fuera de este sistema.
 
@@ -30,6 +31,13 @@ enum FabricTone {
   SIN_DATO
 }
 
+enum ArtKind {
+  PLANAS
+  SIMPLIFICA
+  CMYK
+  NO_ENTRA
+}
+
 model Workshop {
   id           String        @id @default(cuid())
   email        String        @unique
@@ -46,6 +54,7 @@ model Workshop {
   processes    WorkshopProcess[]
   garments     WorkshopGarment[]
   deliveries   Delivery[]
+  printRule    WorkshopPrintRule?
 }
 
 model Process {
@@ -119,6 +128,41 @@ model Request {
   createdAt       DateTime             @default(now())
   orientations    RequestOrientation[]
   deliveries      Delivery[]
+  art             RequestArt?
+}
+
+model WorkshopPrintRule {
+  workshopId      String   @id
+  workshop        Workshop @relation(fields: [workshopId], references: [id], onDelete: Cascade)
+  baseMesh        String   @default("43–48 hilos/cm")
+  basePasses      Int      @default(2)
+  colorMesh       String   @default("62–77 hilos/cm")
+  colorPasses     Int      @default(1)
+  fineMesh        String   @default("90 hilos/cm")
+  fineThresholdMm Float    @default(0.4)
+  inkNames        Json     @default("{}")
+  updatedAt       DateTime @updatedAt
+}
+
+model RequestArt {
+  id        String   @id @default(cuid())
+  requestId String   @unique
+  request   Request  @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  fileName  String
+  mimeType  String
+  source    Bytes
+  preview   Bytes
+  kind      ArtKind
+  reason    String
+  fabric    FabricTone
+  inkCount  Int
+  widthCm   Float
+  heightCm  Float
+  dpi       Int
+  chokeMm   Float
+  colors    Json
+  recipe    Json
+  createdAt DateTime @default(now())
 }
 
 model RequestOrientation {

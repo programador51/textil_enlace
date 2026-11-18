@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { previewRequest, sendRequest, type PreviewData } from "@/app/actions/public";
 import { MessageActions } from "@/components/message-actions";
+import { SeparatorStudio } from "@/components/separator-studio";
 import { ProcessChips } from "@/components/workshop-card";
 import {
   DESIGN_OPTIONS,
@@ -13,6 +14,7 @@ import {
   pieceLabel,
   sizeLabel,
 } from "@/lib/labels";
+import type { ArtPayload } from "@/lib/separator/payload";
 import type { PublicGarment, PublicWorkshop, Receipt } from "@/lib/types";
 
 const steps = [
@@ -74,6 +76,11 @@ function validateStep(step: number, draft: Draft) {
   return null;
 }
 
+function artHint(art: ArtPayload | null) {
+  if (!art) return null;
+  return { kind: art.kind, inkCount: art.inkCount, reason: art.reason, fabric: art.fabric };
+}
+
 function payload(draft: Draft) {
   return {
     garmentSlug: draft.garmentSlug,
@@ -104,6 +111,7 @@ export function RequestWizard({
   const [selected, setSelected] = useState<string[]>(initialWorkshopId ? [initialWorkshopId] : []);
   const [showAll, setShowAll] = useState(false);
   const [receipt, setReceipt] = useState<Receipt | null>(null);
+  const [art, setArt] = useState<ArtPayload | null>(null);
 
   function update<K extends keyof Draft>(key: K, value: Draft[K]) {
     setDraft((current) => ({ ...current, [key]: value }));
@@ -119,7 +127,7 @@ export function RequestWizard({
     if (step === 3) {
       setPending(true);
       try {
-        const result = await previewRequest(payload(draft));
+        const result = await previewRequest({ ...payload(draft), artHint: artHint(art) });
         if (!result.ok) {
           setError(result.error);
           return;
@@ -147,7 +155,7 @@ export function RequestWizard({
     setError(null);
     setPending(true);
     try {
-      const result = await sendRequest({ ...payload(draft), workshopIds: selected });
+      const result = await sendRequest({ ...payload(draft), workshopIds: selected, art });
       if (!result.ok) {
         setError(result.error);
         return;
@@ -281,6 +289,11 @@ export function RequestWizard({
                   onChange={(event) => update("note", event.target.value)}
                 />
               </label>
+              <SeparatorStudio
+                mode="attach"
+                fabricLock={draft.fabric === "CLARA" || draft.fabric === "OSCURA" ? draft.fabric : null}
+                onArt={setArt}
+              />
             </section>
           ) : null}
 
@@ -396,6 +409,7 @@ export function RequestWizard({
           <SummaryItem label="Cantidad" value={draft.quantity ? pieceLabel(Number(draft.quantity)) : "—"} />
           <SummaryItem label="Tela" value={FABRIC_OPTIONS.find((item) => item.value === draft.fabric)?.label ?? "—"} />
           <SummaryItem label="Diseño" value={DESIGN_OPTIONS.find((item) => item.value === draft.designClass)?.label ?? "—"} />
+          <SummaryItem label="Logo" value={art ? (art.kind === "NO_ENTRA" ? "Sin capas" : art.kind === "CMYK" ? "Cuatricromía" : `${art.inkCount} tintas`) : "—"} />
           <SummaryItem label="Fecha" value={draft.neededBy || "—"} />
           <SummaryItem label="Zona" value={draft.zone || "—"} />
           <SummaryItem label="Talleres" value={selected.length ? String(selected.length) : "—"} />

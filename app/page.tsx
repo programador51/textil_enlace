@@ -23,6 +23,9 @@ export default function HomePage() {
             <Link className="btn btn-secondary" href="/talleres">
               Ver talleres
             </Link>
+            <Link className="btn btn-secondary" href="/separar">
+              Separar un logo
+            </Link>
           </div>
         </div>
         <article className="panel rotate-0 p-6 sm:p-8">
@@ -54,6 +57,20 @@ export default function HomePage() {
             </li>
           ))}
         </ol>
+      </section>
+
+      <section className="mx-auto max-w-6xl px-4 py-4 sm:px-6">
+        <article className="panel flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <h2 className="font-serif text-3xl">Si el logo ya está en el chat</h2>
+            <p className="mt-2 max-w-2xl leading-7 text-ink-soft">
+              Sepáralo en capas de serigrafía: una por tinta, la base blanca si la tela es oscura, y la receta de malla y pasadas. Una foto no produce capas. Esto no calcula un precio.
+            </p>
+          </div>
+          <Link className="btn btn-teal shrink-0" href="/separar">
+            Separar tintas
+          </Link>
+        </article>
       </section>
 
       <section className="mx-auto grid max-w-6xl gap-6 px-4 py-12 sm:px-6 lg:grid-cols-2">

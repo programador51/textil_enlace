@@ -6,7 +6,8 @@ import { redirect } from "next/navigation";
 import { createSession, clearSession, hashPassword, verifyPassword } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { requireWorkshop } from "@/lib/queries";
-import { fichaSchema, firstIssue, loginSchema, slugify, workshopSchema } from "@/lib/validators";
+import { slugifyColor } from "@/lib/separator/color";
+import { fichaSchema, firstIssue, loginSchema, printRuleSchema, slugify, workshopSchema } from "@/lib/validators";
 
 export type FormState = { error: string } | null;
 
@@ -190,4 +191,50 @@ export async function updateFicha(_state: FormState, formData: FormData): Promis
   await createSession({ id: current.id, name: parsed.data.name });
   refreshWorkshopPaths(current.id);
   redirect("/taller?guardada=1");
+}
+
+export async function savePrintRule(_state: FormState, formData: FormData): Promise<FormState> {
+  const workshop = await requireWorkshop();
+  const parsed = printRuleSchema.safeParse({
+    baseMesh: text(formData, "baseMesh"),
+    basePasses: Number(text(formData, "basePasses")),
+    colorMesh: text(formData, "colorMesh"),
+    colorPasses: Number(text(formData, "colorPasses")),
+    fineMesh: text(formData, "fineMesh"),
+    fineThresholdMm: Number(text(formData, "fineThresholdMm")),
+    inkNamesText: text(formData, "inkNamesText"),
+  });
+  if (!parsed.success) return { error: firstIssue(parsed.error) };
+
+  const data = {
+    baseMesh: parsed.data.baseMesh,
+    basePasses: parsed.data.basePasses,
+    colorMesh: parsed.data.colorMesh,
+    colorPasses: parsed.data.colorPasses,
+    fineMesh: parsed.data.fineMesh,
+    fineThresholdMm: parsed.data.fineThresholdMm,
+    inkNames: inkNamesFromText(parsed.data.inkNamesText),
+  };
+
+  await prisma.workshopPrintRule.upsert({
+    where: { workshopId: workshop.id },
+    create: { workshopId: workshop.id, ...data },
+    update: data,
+  });
+
+  revalidatePath("/taller/receta");
+  revalidatePath("/taller/solicitudes");
+  redirect("/taller/receta?guardada=1");
+}
+
+function inkNamesFromText(value: string) {
+  const names: Record<string, string> = {};
+  for (const line of value.split(/\r?\n/)) {
+    const parts = line.split("=");
+    if (parts.length < 2) continue;
+    const key = slugifyColor(parts[0] ?? "");
+    const label = parts.slice(1).join("=").trim();
+    if (key && label) names[key] = label.slice(0, 40);
+  }
+  return names;
 }

@@ -25,6 +25,7 @@ const sections = [
     paragraphs: [
       "En Solicitudes ves los encargos en los que te eligieron. Cada uno trae prenda, cantidad, diseño, tela, fecha, zona, nota y el contacto de la persona.",
       "Desde ahí abres WhatsApp con el mismo texto, o lo copias. La cotización, el tiempo de producción y la forma de pago los acuerdas tú con la persona. Esos números no se capturan en el sitio.",
+      "Si la solicitud trae un logo de tintas planas, también trae las capas y la receta. Tus hilos y los nombres de tus botes se guardan en Receta de impresión. Quien encargó sigue viendo la regla inicial.",
     ],
   },
   {

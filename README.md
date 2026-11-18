@@ -12,6 +12,7 @@ El sistema no calcula, compara ni guarda precios.
 - Folio para volver a abrir la conexión. No contiene un monto.
 - Cuenta del taller: ficha, procesos, prendas y solicitudes en las que fue elegido.
 - Manual de quien encarga y manual del taller, dentro del sitio.
+- Separador de tintas planas: capas de serigrafía, base blanca, registro y receta. Se usa solo o adjunto a una solicitud. No calcula un precio.
 
 ## Requisitos
 
@@ -134,6 +135,10 @@ El sitio y la base quedan independientes: puedes cambiar uno sin reconstruir el 
 
 El manual está en `/manual`.
 
+Si el logo ya está, ábrelo en **Separar tintas** (`/separar`) o adjúntalo en el paso del diseño. Un archivo de uno a seis colores sólidos produce las capas y la receta. Si hay más de seis tintas, se separa en cuatricromía. El ZIP incluye `capas.psd` para abrirlo en Photoshop. Una foto no produce capas y la orientación pasa a DTF o DTG. El folio guarda esas capas y sigue sin un monto.
+
+El manual del logo está en `/manual/separador`. Hay dos archivos de prueba en `/ejemplos/logo-tintas.svg` y `/ejemplos/degradado.svg`.
+
 ### Taller
 
 1. Entra a **Publicar mi ficha** (`/taller/registro`) o a **Soy taller**.
@@ -141,7 +146,7 @@ El manual está en `/manual`.
 3. En **Solicitudes** aparecen solo los encargos en los que el taller fue elegido, con el contacto.
 4. Desde ahí se abre el chat o se copia la solicitud. La cotización se acuerda fuera del sitio.
 
-El manual está en `/manual/taller`.
+El manual está en `/manual/taller`. La receta de malla, pasadas y nombres de tinta se guarda en **Receta** (`/taller/receta`). El manual de esa receta está en `/manual/separador/taller`.
 
 ## Cuentas de demostración
 
@@ -178,7 +183,7 @@ npm run build
 ```text
 app/                páginas y acciones de servidor
 components/         interfaz
-lib/                sesión, orientación, mensajes y consultas
+lib/                sesión, orientación, separador, mensajes y consultas
 prisma/             esquema, migración y semilla
 docker-compose.yml  Postgres y Next.js de desarrollo
 ```
@@ -186,4 +191,6 @@ docker-compose.yml  Postgres y Next.js de desarrollo
 ## Lo que esta versión no hace
 
 No guarda tarifas, márgenes ni totales. No cobra, no factura y no produce la prenda. No pone reseñas ni lugares pagados. No rechaza una combinación de prenda y proceso. El registro es solo para tamaño chico o mediano, en Monterrey y su área.
-"# textil_enlace" 
+
+Las tintas planas no llevan trama. Arriba de seis tintas la cuatricromía sí: trama de semitonos. El separador no hace choke distinto por color, RIP ni tiempos de horno. La película se imprime con el equipo del taller.
+

@@ -1,8 +1,11 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
+import { ArtPanel } from "@/components/art-panel";
 import { MessageActions } from "@/components/message-actions";
 import { prisma } from "@/lib/db";
+import { artMessageLine } from "@/lib/separator/orient";
+import { asStoredArt } from "@/lib/separator/stored";
 import { designLabel, fabricLabel, formatIsoDate, formatPhone, formatTimestamp, pieceLabel } from "@/lib/labels";
 import { buildRequestMessage } from "@/lib/message";
 import { dateToIso } from "@/lib/queries";
@@ -29,11 +32,27 @@ async function Folio({ params }: { params: Promise<{ folio: string }> }) {
     include: {
       orientations: { orderBy: { sortOrder: "asc" } },
       deliveries: { include: { workshop: true }, orderBy: { sentAt: "asc" } },
+      art: {
+        select: {
+          fileName: true,
+          kind: true,
+          reason: true,
+          fabric: true,
+          inkCount: true,
+          widthCm: true,
+          heightCm: true,
+          dpi: true,
+          chokeMm: true,
+          colors: true,
+          recipe: true,
+        },
+      },
     },
   });
   if (!request) notFound();
 
   const neededBy = dateToIso(request.neededBy);
+  const storedArt = request.art ? asStoredArt(request.art) : null;
   const message = buildRequestMessage({
     folio: request.folio,
     customerName: request.customerName,
@@ -45,6 +64,7 @@ async function Folio({ params }: { params: Promise<{ folio: string }> }) {
     zone: request.zone,
     note: request.note ?? "",
     customerContact: request.customerContact,
+    artLine: storedArt ? artMessageLine(storedArt) : undefined,
   });
 
   return (
@@ -78,6 +98,8 @@ async function Folio({ params }: { params: Promise<{ folio: string }> }) {
           </section>
         ))}
       </div>
+
+      {storedArt ? <ArtPanel folio={request.folio} art={storedArt} /> : null}
 
       <h2 className="mt-8 font-serif text-3xl">Talleres que recibieron la solicitud</h2>
       <ul className="mt-4 grid gap-4">

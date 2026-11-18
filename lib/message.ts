@@ -11,6 +11,7 @@ export type RequestMessageInput = {
   zone: string;
   note: string;
   customerContact: string;
+  artLine?: string;
 };
 
 export function buildRequestMessage(input: RequestMessageInput) {
@@ -27,6 +28,7 @@ export function buildRequestMessage(input: RequestMessageInput) {
   ];
 
   if (input.note.trim()) lines.push(`Nota: ${input.note.trim()}`);
+  if (input.artLine) lines.push(input.artLine);
 
   lines.push(
     `Mi contacto: ${input.customerContact}`,

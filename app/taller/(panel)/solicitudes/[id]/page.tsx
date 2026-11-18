@@ -1,8 +1,11 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
+import { ArtPanel } from "@/components/art-panel";
 import { MessageActions } from "@/components/message-actions";
 import { prisma } from "@/lib/db";
+import { artMessageLine } from "@/lib/separator/orient";
+import { asPrintRule, asStoredArt } from "@/lib/separator/stored";
 import { designLabel, fabricLabel, formatIsoDate, formatTimestamp, pieceLabel } from "@/lib/labels";
 import { buildRequestMessage } from "@/lib/message";
 import { dateToIso, requireWorkshop } from "@/lib/queries";
@@ -21,15 +24,38 @@ export default function SolicitudPage({ params }: { params: Promise<{ id: string
 
 async function Detail({ params }: { params: Promise<{ id: string }> }) {
   const [{ id }, workshop] = await Promise.all([params, requireWorkshop()]);
-  const delivery = await prisma.delivery.findFirst({
-    where: { id, workshopId: workshop.id },
-    include: {
-      request: { include: { orientations: { orderBy: { sortOrder: "asc" } } } },
-    },
-  });
+  const [delivery, printRule] = await Promise.all([
+    prisma.delivery.findFirst({
+      where: { id, workshopId: workshop.id },
+      include: {
+        request: {
+          include: {
+            orientations: { orderBy: { sortOrder: "asc" } },
+            art: {
+              select: {
+                fileName: true,
+                kind: true,
+                reason: true,
+                fabric: true,
+                inkCount: true,
+                widthCm: true,
+                heightCm: true,
+                dpi: true,
+                chokeMm: true,
+                colors: true,
+                recipe: true,
+              },
+            },
+          },
+        },
+      },
+    }),
+    prisma.workshopPrintRule.findUnique({ where: { workshopId: workshop.id } }),
+  ]);
   if (!delivery) notFound();
 
   const request = delivery.request;
+  const storedArt = request.art ? asStoredArt(request.art) : null;
   const neededBy = dateToIso(request.neededBy);
   const message = buildRequestMessage({
     folio: request.folio,
@@ -42,6 +68,7 @@ async function Detail({ params }: { params: Promise<{ id: string }> }) {
     zone: request.zone,
     note: request.note ?? "",
     customerContact: request.customerContact,
+    artLine: storedArt ? artMessageLine(storedArt) : undefined,
   });
 
   return (
@@ -73,6 +100,8 @@ async function Detail({ params }: { params: Promise<{ id: string }> }) {
           </section>
         ))}
       </div>
+
+      {storedArt ? <ArtPanel folio={request.folio} art={storedArt} rule={asPrintRule(printRule)} /> : null}
 
       <p className="mt-6 text-sm text-ink-soft">
         Cotiza con tus precios, tus mínimos y tus tiempos. Esos números no se guardan aquí.
