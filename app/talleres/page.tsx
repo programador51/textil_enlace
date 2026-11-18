@@ -1,10 +1,14 @@
 import { Suspense } from "react";
 import { WorkshopDirectory } from "@/components/workshop-directory";
 import { listPublicWorkshops } from "@/lib/queries";
+import { buildPageMetadata } from "@/lib/site-metadata";
 
-export const metadata = {
+export const metadata = buildPageMetadata({
   title: "Talleres",
-};
+  description:
+    "Directorio de talleres chicos y medianos de impresión textil en Monterrey y su área metropolitana: serigrafía, DTF, DTG, sublimación y vinil.",
+  path: "/talleres",
+});
 
 export default function TalleresPage() {
   return (

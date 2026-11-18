@@ -1,8 +1,12 @@
 import { Manual } from "@/components/manual";
+import { buildPageMetadata } from "@/lib/site-metadata";
 
-export const metadata = {
+export const metadata = buildPageMetadata({
   title: "Manual del taller",
-};
+  description:
+    "Cómo publicar la ficha de un taller chico o mediano en Monterrey y recibir solicitudes directas de impresión textil.",
+  path: "/manual/taller",
+});
 
 const sections = [
   {

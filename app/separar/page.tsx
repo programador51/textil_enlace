@@ -1,9 +1,14 @@
 import { SeparatorStudio } from "@/components/separator-studio";
+import { buildPageMetadata, SEPARATOR_OG_IMAGE, SEPARATOR_TWITTER_IMAGE } from "@/lib/site-metadata";
 
-export const metadata = {
+export const metadata = buildPageMetadata({
   title: "Separar tintas",
-  description: "Separa un logo de colores sólidos en capas de serigrafía, con la malla, las pasadas y el orden.",
-};
+  description:
+    "Separa un logo en capas transparentes de serigrafía o cuatricromía con semitonos, base blanca, receta de impresión y archivo PSD.",
+  path: "/separar",
+  ogImage: SEPARATOR_OG_IMAGE,
+  twitterImage: SEPARATOR_TWITTER_IMAGE,
+});
 
 export default function SepararPage() {
   return (

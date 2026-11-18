@@ -1,10 +1,14 @@
 import { Suspense } from "react";
 import { RequestWizard } from "@/components/request-wizard";
 import { listGarments } from "@/lib/queries";
+import { buildPageMetadata } from "@/lib/site-metadata";
 
-export const metadata = {
+export const metadata = buildPageMetadata({
   title: "Describir el encargo",
-};
+  description:
+    "Describe tu prenda, recibe orientación técnica clara y conecta con talleres chicos y medianos de Monterrey sin crear una cuenta.",
+  path: "/solicitar",
+});
 
 export default function SolicitarPage({
   searchParams,

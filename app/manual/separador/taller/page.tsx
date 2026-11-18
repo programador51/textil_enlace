@@ -1,8 +1,14 @@
 import { Manual } from "@/components/manual";
+import { buildPageMetadata, SEPARATOR_OG_IMAGE, SEPARATOR_TWITTER_IMAGE } from "@/lib/site-metadata";
 
-export const metadata = {
+export const metadata = buildPageMetadata({
   title: "Manual del taller para la receta",
-};
+  description:
+    "Cómo guardar los hilos de malla, pasadas y nombres de tinta del taller para descargar el ZIP de capas con tu propia receta.",
+  path: "/manual/separador/taller",
+  ogImage: SEPARATOR_OG_IMAGE,
+  twitterImage: SEPARATOR_TWITTER_IMAGE,
+});
 
 const sections = [
   {

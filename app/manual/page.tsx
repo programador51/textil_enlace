@@ -1,8 +1,12 @@
 import { Manual } from "@/components/manual";
+import { buildPageMetadata } from "@/lib/site-metadata";
 
-export const metadata = {
+export const metadata = buildPageMetadata({
   title: "Manual de quien encarga",
-};
+  description:
+    "Guía paso a paso para describir un encargo textil, leer la orientación y enviar la misma solicitud a talleres de Monterrey.",
+  path: "/manual",
+});
 
 const sections = [
   {

@@ -1,8 +1,12 @@
 import Link from "next/link";
+import { buildPageMetadata, DEFAULT_DESCRIPTION, DEFAULT_TITLE } from "@/lib/site-metadata";
 
-export const metadata = {
-  title: { absolute: "TextilEnlace · Impresión textil en Monterrey" },
-};
+export const metadata = buildPageMetadata({
+  title: DEFAULT_TITLE,
+  absoluteTitle: DEFAULT_TITLE,
+  description: DEFAULT_DESCRIPTION,
+  path: "/",
+});
 
 export default function HomePage() {
   return (

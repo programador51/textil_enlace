@@ -2,6 +2,14 @@ import type { Metadata } from "next";
 import { Fraunces, Outfit } from "next/font/google";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
+import {
+  DEFAULT_DESCRIPTION,
+  DEFAULT_TITLE,
+  resolveMetadataBase,
+  ROOT_OG_IMAGE,
+  ROOT_TWITTER_IMAGE,
+  SITE_NAME,
+} from "@/lib/site-metadata";
 import "./globals.css";
 
 const outfit = Outfit({
@@ -15,12 +23,44 @@ const fraunces = Fraunces({
 });
 
 export const metadata: Metadata = {
+  metadataBase: resolveMetadataBase(),
+  applicationName: SITE_NAME,
   title: {
-    default: "TextilEnlace",
-    template: "%s · TextilEnlace",
+    default: DEFAULT_TITLE,
+    template: `%s · ${SITE_NAME}`,
   },
-  description:
-    "Conecta a quien necesita impresión textil con talleres chicos y medianos de Monterrey. La cotización la hace cada taller.",
+  description: DEFAULT_DESCRIPTION,
+  keywords: [
+    "impresión textil",
+    "serigrafía",
+    "Monterrey",
+    "DTF",
+    "DTG",
+    "sublimación",
+    "vinil textil",
+    "talleres textiles",
+    "separador de tintas planas",
+    SITE_NAME,
+  ],
+  authors: [{ name: SITE_NAME }],
+  creator: SITE_NAME,
+  publisher: SITE_NAME,
+  category: "business",
+  openGraph: {
+    type: "website",
+    locale: "es_MX",
+    siteName: SITE_NAME,
+    url: "/",
+    title: DEFAULT_TITLE,
+    description: DEFAULT_DESCRIPTION,
+    images: [ROOT_OG_IMAGE],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: DEFAULT_TITLE,
+    description: DEFAULT_DESCRIPTION,
+    images: [ROOT_TWITTER_IMAGE],
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

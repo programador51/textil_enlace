@@ -1,8 +1,14 @@
 import { Manual } from "@/components/manual";
+import { buildPageMetadata, SEPARATOR_OG_IMAGE, SEPARATOR_TWITTER_IMAGE } from "@/lib/site-metadata";
 
-export const metadata = {
+export const metadata = buildPageMetadata({
   title: "Manual de quien sube el logo",
-};
+  description:
+    "Qué archivos acepta el separador de tintas, cómo leer las capas transparentes y cómo usar el PSD y la receta de impresión.",
+  path: "/manual/separador",
+  ogImage: SEPARATOR_OG_IMAGE,
+  twitterImage: SEPARATOR_TWITTER_IMAGE,
+});
 
 const sections = [
   {
