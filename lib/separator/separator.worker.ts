@@ -17,6 +17,7 @@ type AnalyzeJob = {
   fineThresholdMm: number;
   fabric: "CLARA" | "OSCURA";
   chokeMm: number;
+  keepSpots?: boolean;
 };
 
 type PackJob = {
@@ -49,7 +50,7 @@ scope.onmessage = (event: MessageEvent<Inbound>) => {
     const data = new Uint8ClampedArray(job.buffer);
     const analysis = analyzePixels(
       { width: job.width, height: job.height, data },
-      { palette: job.palette ?? undefined, dpi: job.dpi, fineThresholdMm: job.fineThresholdMm },
+      { palette: job.palette ?? undefined, dpi: job.dpi, fineThresholdMm: job.fineThresholdMm, keepSpots: job.keepSpots === true },
     );
     const preview = buildPreview({
       assignment: analysis.assignment,

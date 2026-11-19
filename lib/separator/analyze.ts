@@ -8,10 +8,9 @@ const MERGE_DISTANCE = 42;
 const SMALL_SHARE = 0.006;
 const PALETTE_SNAP = 72;
 
-export function analyzePixels(
-  buffer: PixelBuffer,
-  options?: { palette?: RGB[]; dpi?: number; fineThresholdMm?: number },
-): Analysis {
+type AnalyzeOptions = { palette?: RGB[]; dpi?: number; fineThresholdMm?: number; keepSpots?: boolean };
+
+export function analyzePixels(buffer: PixelBuffer, options?: AnalyzeOptions): Analysis {
   const { width, height, data } = buffer;
   const count = width * height;
   const background = detectBackground(buffer);
@@ -23,7 +22,12 @@ export function analyzePixels(
   }
 
   if (inkIndexes.length === 0) {
-    return emptyAnalysis(count, "No se vieron tintas. Revisa que el logo no sea del mismo color que el fondo.");
+    return emptyAnalysis(
+      count,
+      options?.keepSpots
+        ? "No se vieron colores sólidos. El vinil de corte necesita un diseño con relleno, distinto del fondo."
+        : "No se vieron tintas. Revisa que el logo no sea del mismo color que el fondo.",
+    );
   }
 
   const clustered = options?.palette?.length
@@ -33,14 +37,16 @@ export function analyzePixels(
   if (clustered.photo) {
     return emptyAnalysis(
       count,
-      "Esto se ve como una foto, un degradado largo o una acuarela. No armamos pantallas de serigrafía para ese archivo.",
+      options?.keepSpots
+        ? "El vinil de corte solo acepta un diseño de colores sólidos. Esto se ve como una foto, un degradado largo o una acuarela, y la navaja no tiene un borde limpio para cortar."
+        : "Esto se ve como una foto, un degradado largo o una acuarela. No armamos pantallas de serigrafía para ese archivo.",
     );
   }
 
   return finishAnalysis(buffer, inkIndexes, clustered.clusters, clustered.simplified, options);
 }
 
-export function mergeInks(analysis: Analysis, buffer: PixelBuffer, from: number, into: number, options?: { dpi?: number; fineThresholdMm?: number }) {
+export function mergeInks(analysis: Analysis, buffer: PixelBuffer, from: number, into: number, options?: AnalyzeOptions) {
   if (!analysis.inks.some((ink) => ink.index === from) || !analysis.inks.some((ink) => ink.index === into) || from === into) {
     return analysis;
   }
@@ -101,7 +107,7 @@ function finishAnalysis(
   inkIndexes: number[],
   clusters: Cluster[],
   simplified: boolean,
-  options?: { dpi?: number; fineThresholdMm?: number },
+  options?: AnalyzeOptions,
 ) {
   const means = clusters.map((cluster) => ({
     r: Math.round(cluster.sumR / cluster.count),
@@ -140,7 +146,7 @@ function analysisFromAssignment(
   assignment: Uint16Array,
   indexes: number[],
   simplified: boolean,
-  options?: { dpi?: number; fineThresholdMm?: number },
+  options?: AnalyzeOptions,
   means?: RGB[],
 ) {
   const counts = new Map<number, number>();
@@ -189,6 +195,23 @@ function analysisFromAssignment(
     index,
     fine: isFine(remapped, buffer.width, buffer.height, index, finePx),
   }));
+
+  if (options?.keepSpots) {
+    const kind: SeparationKind = simplified ? "SIMPLIFICA" : "PLANAS";
+    return {
+      kind,
+      reason:
+        kind === "SIMPLIFICA"
+          ? `Había tonos de borde o muy parecidos. Quedaron ${inks.length} colores sólidos para el vinil. Revisa el corte antes de planchar.`
+          : inks.length === 1
+            ? "Se ve un color sólido. Sirve para vinil de corte."
+            : `Se ven ${inks.length} colores sólidos. Cada uno es una capa de vinil.`,
+      inks,
+      assignment: remapped,
+      canExport: inks.length > 0,
+      simplified: kind === "SIMPLIFICA",
+    };
+  }
 
   const kind = kindFor(inks.length, simplified);
   if (kind === "CMYK") {

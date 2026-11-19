@@ -229,7 +229,7 @@ export function BrandSocialCard({ width, height }: { width: number; height: numb
                 color: "#1c1915",
               }}
             >
-              Serigrafía, con separador de capas, receta y PSD en el navegador.
+              Serigrafía, vinil o sublimación, preparados en el navegador.
             </span>
           </div>
         </div>
@@ -315,7 +315,7 @@ export function SeparatorSocialCard({ width, height }: { width: number; height: 
               display: "flex",
             }}
           >
-            Sube el logo. Salen las capas, la receta y el PSD.
+            Sube el logo. Serigrafía, vinil o sublimación.
           </div>
 
           <div
@@ -327,12 +327,12 @@ export function SeparatorSocialCard({ width, height }: { width: number; height: 
               display: "flex",
             }}
           >
-            De 1 a 6 tintas sólidas, o cuatricromía con trama de semitonos. Incluye base blanca en tela oscura y cruces de registro.
+            Capas y PSD para serigrafía, DXF para vinil textil, o imagen en espejo para sublimación.
           </div>
         </div>
 
         <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-          {["PNG · JPG · SVG · PDF", "Semitonos CMYK", "Archivo capas.psd"].map((badge) => (
+          {["Serigrafía y PSD", "Vinil en DXF", "Sublimación en espejo"].map((badge) => (
             <div
               key={badge}
               style={{

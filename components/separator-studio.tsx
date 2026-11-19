@@ -5,12 +5,17 @@ import { mergeInks } from "@/lib/separator/analyze";
 import { hexOf } from "@/lib/separator/color";
 import { rasterizeFile } from "@/lib/separator/decode";
 import { buildPreview } from "@/lib/separator/films";
+import { encodePng } from "@/lib/separator/png";
 import { buildRecipe } from "@/lib/separator/recipe";
 import { packSeparately, analyzeSeparately } from "@/lib/separator/run";
+import { printableShare, SUBLIMATION_GUIDE, sublimationImage, sublimationInstructions } from "@/lib/separator/sublimation";
 import { DEFAULT_CHOKE_MM, INITIAL_RULE, MAX_SOURCE_BYTES, type PixelBuffer, type RecipeStep } from "@/lib/separator/types";
+import { buildVinylDxf, planVinyl, vinylInstructions } from "@/lib/separator/vinyl";
+import { zipStore } from "@/lib/separator/zip";
 import type { ArtPayload } from "@/lib/separator/payload";
 
 type Fabric = "CLARA" | "OSCURA";
+type Technique = "SERIGRAFIA" | "VINIL" | "SUBLIMACION";
 
 export function SeparatorStudio({
   mode,
@@ -22,6 +27,7 @@ export function SeparatorStudio({
   onArt?: (art: ArtPayload | null) => void;
 }) {
   const [file, setFile] = useState<File | null>(null);
+  const [technique, setTechnique] = useState<Technique>("SERIGRAFIA");
   const [fabricChoice, setFabricChoice] = useState<Fabric>(fabricLock ?? "OSCURA");
   const fabric = fabricLock ?? fabricChoice;
   const [widthCm, setWidthCm] = useState("25");
@@ -29,6 +35,7 @@ export function SeparatorStudio({
   const [dpi, setDpi] = useState("150");
   const [raster, setRaster] = useState<PixelBuffer | null>(null);
   const [analysis, setAnalysis] = useState<Awaited<ReturnType<typeof analyzeSeparately>> | null>(null);
+  const [sublimated, setSublimated] = useState<PixelBuffer | null>(null);
   const [usedDpi, setUsedDpi] = useState(150);
   const [merge, setMerge] = useState<number[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -37,15 +44,32 @@ export function SeparatorStudio({
 
   const recipe = useMemo<RecipeStep[]>(
     () =>
-      analysis?.canExport
+      technique === "SERIGRAFIA" && analysis?.canExport
         ? buildRecipe(analysis.inks, fabric, INITIAL_RULE, analysis.kind === "CMYK" ? "cmyk" : "spot")
         : [],
-    [analysis, fabric],
+    [analysis, fabric, technique],
   );
+  const vinylPlan = useMemo(() => {
+    if (technique !== "VINIL" || !analysis) return null;
+    const width = Number(widthCm);
+    const height = Number(heightCm);
+    return planVinyl({
+      kind: analysis.kind,
+      reason: analysis.reason,
+      inks: analysis.inks,
+      fabric,
+      widthCm: Number.isFinite(width) ? width : 0,
+      heightCm: Number.isFinite(height) ? height : 0,
+    });
+  }, [analysis, fabric, heightCm, technique, widthCm]);
+  const canDownload =
+    technique === "SUBLIMACION" ? sublimated != null : technique === "VINIL" ? vinylPlan?.allowed === true : analysis?.canExport === true;
+  const downloadName =
+    technique === "VINIL" ? "vinil-textil.zip" : technique === "SUBLIMACION" ? "sublimacion.zip" : "capas-serigrafia.zip";
 
   useEffect(() => {
     if (!onArt) return;
-    if (!file || !analysis || !raster) {
+    if (technique !== "SERIGRAFIA" || !file || !analysis || !raster) {
       onArt(null);
       return;
     }
@@ -75,7 +99,7 @@ export function SeparatorStudio({
     return () => {
       cancelled = true;
     };
-  }, [analysis, fabric, file, heightCm, onArt, raster, recipe, usedDpi, widthCm]);
+  }, [analysis, fabric, file, heightCm, onArt, raster, recipe, technique, usedDpi, widthCm]);
 
   async function separate(nextFile = file) {
     const size = readSize();
@@ -87,6 +111,8 @@ export function SeparatorStudio({
     setError(null);
     setPending("separar");
     setAnalysis(null);
+    setRaster(null);
+    setSublimated(null);
     setZipHref((current) => {
       if (current) URL.revokeObjectURL(current);
       return null;
@@ -94,6 +120,16 @@ export function SeparatorStudio({
     setMerge([]);
     try {
       const drawn = await rasterizeFile(nextFile, size.widthCm, size.heightCm, size.dpi);
+      setUsedDpi(drawn.dpi);
+      if (technique === "SUBLIMACION") {
+        if (printableShare(drawn.buffer) < 0.002) {
+          setError("No se vio un diseño para sublimar. Revisa que el archivo tenga color y no sea un PNG vacío.");
+          return;
+        }
+        setRaster(drawn.buffer);
+        setSublimated(sublimationImage(drawn.buffer));
+        return;
+      }
       const result = await analyzeSeparately({
         pixels: drawn.buffer.data,
         width: drawn.buffer.width,
@@ -103,9 +139,9 @@ export function SeparatorStudio({
         fineThresholdMm: INITIAL_RULE.fineThresholdMm,
         fabric,
         chokeMm: fabric === "OSCURA" ? DEFAULT_CHOKE_MM : 0,
+        keepSpots: technique === "VINIL",
       });
       setRaster(drawn.buffer);
-      setUsedDpi(drawn.dpi);
       setAnalysis(result);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "No se pudo separar el archivo.");
@@ -116,7 +152,11 @@ export function SeparatorStudio({
 
   function fuse() {
     if (!analysis || !raster || merge.length !== 2) return;
-    const next = mergeInks(analysis, raster, merge[0], merge[1], { dpi: usedDpi, fineThresholdMm: INITIAL_RULE.fineThresholdMm });
+    const next = mergeInks(analysis, raster, merge[0], merge[1], {
+      dpi: usedDpi,
+      fineThresholdMm: INITIAL_RULE.fineThresholdMm,
+      keepSpots: technique === "VINIL",
+    });
     const preview = buildPreview({
       assignment: next.assignment,
       width: raster.width,
@@ -130,27 +170,57 @@ export function SeparatorStudio({
     setMerge([]);
   }
 
+  async function packDownload(size: { widthCm: number; heightCm: number }) {
+    if (!raster) throw new Error("No se pudo armar el archivo.");
+    if (technique === "VINIL") {
+      if (!analysis || !vinylPlan?.allowed) throw new Error("Este diseño no se puede cortar en vinil.");
+      const dxf = buildVinylDxf({
+        assignment: analysis.assignment,
+        width: raster.width,
+        height: raster.height,
+        inks: analysis.inks,
+        widthCm: size.widthCm,
+        heightCm: size.heightCm,
+      });
+      return zipStore([
+        { name: "capas-vinil.dxf", data: new TextEncoder().encode(dxf) },
+        { name: "plancha-vinil.txt", data: new TextEncoder().encode(vinylInstructions(vinylPlan, size)) },
+      ]);
+    }
+    if (technique === "SUBLIMACION") {
+      if (!sublimated) throw new Error("No se pudo armar la sublimación.");
+      const png = await encodePng(sublimated.width, sublimated.height, sublimated.data);
+      return zipStore([
+        { name: "diseno-sublimacion.png", data: png },
+        { name: "plancha-sublimacion.txt", data: new TextEncoder().encode(sublimationInstructions(size)) },
+      ]);
+    }
+    if (!analysis?.canExport) throw new Error("No se pudo armar el archivo.");
+    return packSeparately({
+      pixels: raster.data,
+      width: raster.width,
+      height: raster.height,
+      assignment: analysis.assignment,
+      inks: analysis.inks,
+      fabric,
+      dpi: usedDpi,
+      chokeMm: fabric === "OSCURA" ? DEFAULT_CHOKE_MM : 0,
+      fileName: file?.name ?? "logo",
+      widthCm: size.widthCm,
+      heightCm: size.heightCm,
+      steps: recipe,
+      source: "inicial",
+      process: analysis.kind === "CMYK" ? "cmyk" : "spot",
+    });
+  }
+
   async function download() {
-    if (!analysis?.canExport || !raster) return;
+    const size = readSize();
+    if (!size || !raster || !canDownload) return;
     setPending("zip");
     setError(null);
     try {
-      const zip = await packSeparately({
-        pixels: raster.data,
-        width: raster.width,
-        height: raster.height,
-        assignment: analysis.assignment,
-        inks: analysis.inks,
-        fabric,
-        dpi: usedDpi,
-        chokeMm: fabric === "OSCURA" ? DEFAULT_CHOKE_MM : 0,
-        fileName: file?.name ?? "logo",
-        widthCm: Number(widthCm),
-        heightCm: Number(heightCm),
-        steps: recipe,
-        source: "inicial",
-        process: analysis.kind === "CMYK" ? "cmyk" : "spot",
-      });
+      const zip = await packDownload(size);
       const href = zipHrefFrom(zip);
       setZipHref((current) => {
         if (current) URL.revokeObjectURL(current);
@@ -189,7 +259,7 @@ export function SeparatorStudio({
           <div>
             <h3 className="font-serif text-2xl">Logo, si ya lo tienes</h3>
             <p className="mt-2 text-sm leading-6 text-ink-soft">
-              Puedes seguir sin archivo. Si lo adjuntas, el separador arma las capas: tintas planas, o cuatricromía si hay más de seis. No calcula un precio.
+              Puedes seguir sin archivo. En serigrafía, el logo se adjunta al encargo. Vinil y sublimación se descargan aquí. No calcula un precio.
             </p>
           </div>
         ) : null}
@@ -211,6 +281,7 @@ export function SeparatorStudio({
               setFile(next);
               setAnalysis(null);
               setRaster(null);
+              setSublimated(null);
               onArt?.(null);
             }}
           />
@@ -225,6 +296,40 @@ export function SeparatorStudio({
           </button>
         </div>
 
+        <fieldset className="grid gap-2">
+          <legend className="font-semibold">Técnica</legend>
+          {(
+            [
+              ["SERIGRAFIA", "Serigrafía"],
+              ["VINIL", "Vinil textil"],
+              ["SUBLIMACION", "Sublimación"],
+            ] as const
+          ).map(([value, label]) => (
+            <label key={value} className="flex items-center gap-3">
+              <input
+                type="radio"
+                name="separador-tecnica"
+                checked={technique === value}
+                onChange={() => {
+                  setTechnique(value);
+                  setAnalysis(null);
+                  setSublimated(null);
+                  setMerge([]);
+                  setZipHref((current) => {
+                    if (current) URL.revokeObjectURL(current);
+                    return null;
+                  });
+                  onArt?.(null);
+                }}
+              />
+              {label}
+            </label>
+          ))}
+        </fieldset>
+
+        {technique === "SUBLIMACION" ? (
+          <p className="notice">La sublimación se plancha en poliéster o en una tela con recubrimiento. El algodón no guarda el color.</p>
+        ) : (
         <fieldset className="grid gap-2" disabled={Boolean(fabricLock)}>
           <legend className="font-semibold">Tela</legend>
           <label className="flex items-center gap-3">
@@ -236,6 +341,7 @@ export function SeparatorStudio({
             Tela oscura, con base blanca
           </label>
         </fieldset>
+        )}
 
         <div className="grid gap-3 sm:grid-cols-3">
           <label className="field-label">
@@ -253,10 +359,10 @@ export function SeparatorStudio({
         </div>
 
         <button type="button" className="btn btn-primary justify-self-start" onClick={() => void separate()} disabled={!file || pending != null}>
-          {pending === "separar" ? "Separando…" : "Separar tintas"}
+          {pending === "separar" ? "Preparando…" : technique === "VINIL" ? "Preparar el vinil" : technique === "SUBLIMACION" ? "Preparar la sublimación" : "Separar tintas"}
         </button>
 
-        {analysis ? (
+        {technique === "SERIGRAFIA" && analysis ? (
           <div className="grid gap-4">
             <p className={analysis.kind === "NO_ENTRA" ? "alert" : "notice"} role="status">
               {analysis.reason}
@@ -297,20 +403,95 @@ export function SeparatorStudio({
               </div>
             ) : null}
             {recipe.length > 0 ? <RecipeTable steps={recipe} /> : null}
-            {analysis.canExport && zipHref ? (
-              <a className="btn btn-teal justify-self-start" href={zipHref} download="capas-serigrafia.zip">
-                Descargar capas-serigrafia.zip
-              </a>
-            ) : null}
-            {analysis.canExport && !zipHref ? (
-              <button type="button" className="btn btn-teal justify-self-start" onClick={() => void download()} disabled={pending != null}>
-                {pending === "zip" ? "Armando el ZIP…" : "Descargar capas y receta"}
-              </button>
+          </div>
+        ) : null}
+
+        {technique === "VINIL" && vinylPlan ? (
+          <div className="grid gap-4">
+            <p className={vinylPlan.allowed ? "notice" : "alert"} role="status">
+              {vinylPlan.reason}
+            </p>
+            {vinylPlan.allowed ? (
+              <>
+                <p>{vinylPlan.mirror}</p>
+                <div>
+                  <p className="font-semibold">Orden para planchar</p>
+                  <p className="mt-1 text-sm text-ink-soft">La primera queda debajo. La última queda arriba.</p>
+                  <ol className="mt-2 grid gap-2">
+                    {vinylPlan.order.map((ink, index) => (
+                      <li key={`${ink.name}-${index}`} className="flex items-center gap-2">
+                        <span className="inline-block h-3 w-3 rounded-full border border-line" style={{ background: ink.hex }} />
+                        <span>
+                          {index + 1}. {ink.name}
+                        </span>
+                      </li>
+                    ))}
+                  </ol>
+                </div>
+                <ul className="grid gap-3 text-sm leading-6">
+                  <li>
+                    <span className="font-semibold">Navaja. </span>
+                    {vinylPlan.blade}
+                  </li>
+                  <li>
+                    <span className="font-semibold">Velocidad. </span>
+                    {vinylPlan.speed}
+                  </li>
+                  <li>
+                    <span className="font-semibold">Máquina. </span>
+                    {vinylPlan.tool}
+                  </li>
+                  <li>
+                    <span className="font-semibold">Vinil. </span>
+                    {vinylPlan.vinyl}
+                  </li>
+                  <li>
+                    <span className="font-semibold">Tiempo de plancha. </span>
+                    {vinylPlan.iron}
+                  </li>
+                </ul>
+              </>
             ) : null}
           </div>
         ) : null}
+
+        {technique === "SUBLIMACION" && sublimated ? (
+          <div className="grid gap-3">
+            <p className="notice" role="status">
+              {SUBLIMATION_GUIDE.color}
+            </p>
+            <p>{SUBLIMATION_GUIDE.mirror}</p>
+            <p>
+              <span className="font-semibold">Tiempo de plancha. </span>
+              {SUBLIMATION_GUIDE.iron}
+            </p>
+          </div>
+        ) : null}
+
+        {canDownload && zipHref ? (
+          <a className="btn btn-teal justify-self-start" href={zipHref} download={downloadName}>
+            Descargar {downloadName}
+          </a>
+        ) : null}
+        {canDownload && !zipHref ? (
+          <button type="button" className="btn btn-teal justify-self-start" onClick={() => void download()} disabled={pending != null}>
+            {pending === "zip" ? "Armando el archivo…" : technique === "VINIL" ? "Descargar DXF y plancha" : technique === "SUBLIMACION" ? "Descargar imagen y plancha" : "Descargar capas y receta"}
+          </button>
+        ) : null}
       </div>
-      <PreviewPanel preview={analysis?.preview ?? null} fabric={fabric} />
+      <PreviewPanel
+        preview={technique === "SUBLIMACION" ? sublimated : (analysis?.preview ?? null)}
+        caption={
+          technique === "SUBLIMACION"
+            ? "Diseño en espejo, con el color que imprime la cuatricromía. El fondo blanco es el papel."
+            : technique === "VINIL"
+              ? "Vista de los colores. El corte, en espejo, va en el DXF."
+              : fabric === "OSCURA"
+                ? "Playera oscura, con base blanca debajo."
+                : "Playera clara, sin base."
+        }
+        label={technique === "SUBLIMACION" ? "Listo para imprimir" : "Vista sobre la tela"}
+      />
     </section>
   );
 }
@@ -343,7 +524,7 @@ function RecipeTable({ steps }: { steps: RecipeStep[] }) {
   );
 }
 
-function PreviewPanel({ preview, fabric }: { preview: PixelBuffer | null; fabric: Fabric }) {
+function PreviewPanel({ preview, caption, label }: { preview: PixelBuffer | null; caption: string; label: string }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -358,8 +539,8 @@ function PreviewPanel({ preview, fabric }: { preview: PixelBuffer | null; fabric
 
   return (
     <aside className="panel">
-      <p className="text-xs font-bold tracking-[0.16em] text-gold uppercase">Vista sobre la tela</p>
-      <p className="mt-2 text-sm text-ink-soft">{fabric === "OSCURA" ? "Playera oscura, con base blanca debajo." : "Playera clara, sin base."}</p>
+      <p className="text-xs font-bold tracking-[0.16em] text-gold uppercase">{label}</p>
+      <p className="mt-2 text-sm text-ink-soft">{caption}</p>
       <div className="mt-4 overflow-hidden rounded-2xl border border-line bg-paper">
         {preview ? (
           <canvas ref={canvasRef} className="h-auto w-full" role="img" aria-label="Diseño separado sobre la tela" />

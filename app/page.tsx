@@ -68,7 +68,7 @@ export default function HomePage() {
           <div>
             <h2 className="font-serif text-3xl">Si el logo ya está en el chat</h2>
             <p className="mt-2 max-w-2xl leading-7 text-ink-soft">
-              Sepáralo en capas de serigrafía: una por tinta, la base blanca si la tela es oscura, y la receta de malla y pasadas. Una foto no produce capas. Esto no calcula un precio.
+              Prepáralo para serigrafía, vinil textil o sublimación. Una foto no produce capas ni corte. Esto no calcula un precio.
             </p>
           </div>
           <Link className="btn btn-teal shrink-0" href="/separar">

@@ -12,7 +12,7 @@ El sistema no calcula, compara ni guarda precios.
 - Folio para volver a abrir la conexión. No contiene un monto.
 - Cuenta del taller: ficha, procesos, prendas y solicitudes en las que fue elegido.
 - Manual de quien encarga y manual del taller, dentro del sitio.
-- Separador de tintas planas: capas de serigrafía, base blanca, registro y receta. Se usa solo o adjunto a una solicitud. No calcula un precio.
+- Separador: serigrafía con capas y receta, vinil textil en DXF, y sublimación en espejo. La serigrafía se usa sola o adjunta a una solicitud. No calcula un precio.
 
 ## Requisitos
 
@@ -135,7 +135,7 @@ El sitio y la base quedan independientes: puedes cambiar uno sin reconstruir el 
 
 El manual está en `/manual`.
 
-Si el logo ya está, ábrelo en **Separar tintas** (`/separar`) o adjúntalo en el paso del diseño. Un archivo de uno a seis colores sólidos produce las capas y la receta. Si hay más de seis tintas, se separa en cuatricromía. El ZIP incluye `capas.psd` para abrirlo en Photoshop. Una foto no produce capas y la orientación pasa a DTF o DTG. El folio guarda esas capas y sigue sin un monto.
+Si el logo ya está, ábrelo en **Separar tintas** (`/separar`) o adjúntalo en el paso del diseño. En serigrafía, uno a seis colores sólidos produce las capas y la receta. Si hay más de seis tintas, se separa en cuatricromía. El ZIP incluye `capas.psd` para abrirlo en Photoshop. Vinil textil entrega un DXF por color, y solo si el diseño es de colores sólidos. Sublimación entrega la imagen en cuatricromía y en espejo. Una foto no produce capas ni corte, y la orientación pasa a DTF o DTG. El folio guarda las capas de serigrafía y sigue sin un monto.
 
 El manual del logo está en `/manual/separador`. Hay dos archivos de prueba en `/ejemplos/logo-tintas.svg` y `/ejemplos/degradado.svg`.
 

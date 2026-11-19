@@ -39,6 +39,7 @@ export function analyzeSeparately(input: {
   fineThresholdMm: number;
   fabric: "CLARA" | "OSCURA";
   chokeMm: number;
+  keepSpots?: boolean;
 }) {
   const payload = {
     type: "analyze" as const,
@@ -50,13 +51,19 @@ export function analyzeSeparately(input: {
     fineThresholdMm: input.fineThresholdMm,
     fabric: input.fabric,
     chokeMm: input.chokeMm,
+    keepSpots: input.keepSpots === true,
   };
 
   return withWorker(payload, () => {
     const data = new Uint8ClampedArray(payload.buffer.slice(0));
     const analysis = analyzePixels(
       { width: input.width, height: input.height, data },
-      { palette: input.palette ?? undefined, dpi: input.dpi, fineThresholdMm: input.fineThresholdMm },
+      {
+        palette: input.palette ?? undefined,
+        dpi: input.dpi,
+        fineThresholdMm: input.fineThresholdMm,
+        keepSpots: input.keepSpots === true,
+      },
     );
     const preview = buildPreview({
       assignment: analysis.assignment,

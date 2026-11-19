@@ -4,7 +4,7 @@ import { buildPageMetadata, SEPARATOR_OG_IMAGE, SEPARATOR_TWITTER_IMAGE } from "
 export const metadata = buildPageMetadata({
   title: "Manual de quien sube el logo",
   description:
-    "Qué archivos acepta el separador de tintas, cómo leer las capas transparentes y cómo usar el PSD y la receta de impresión.",
+    "Cómo preparar un logo para serigrafía, vinil textil o sublimación, y cómo leer las capas, el DXF y el tiempo de plancha.",
   path: "/manual/separador",
   ogImage: SEPARATOR_OG_IMAGE,
   twitterImage: SEPARATOR_TWITTER_IMAGE,
@@ -14,8 +14,8 @@ const sections = [
   {
     heading: "Para qué sirve",
     paragraphs: [
-      "El separador convierte un logo de colores sólidos en una capa por tinta, lista para revelar. Si la tela es oscura, agrega una base blanca encogida. Junto a las capas va la receta: malla, pasadas y orden.",
-      "Se abre en el navegador, en Separar tintas. No se instala nada. También puedes adjuntar el logo al describir un encargo en TextilEnlace.",
+      "El separador prepara un logo de tres maneras. Serigrafía: una capa por tinta, base blanca si la tela es oscura, y la receta de malla, pasadas y orden. Vinil textil: un DXF con una capa por color. Sublimación: la imagen en cuatricromía y en espejo.",
+      "Se abre en el navegador, en Separar tintas. No se instala nada. La serigrafía también se puede adjuntar al describir un encargo. El vinil y la sublimación se descargan en esa pantalla.",
     ],
   },
   {
@@ -29,7 +29,7 @@ const sections = [
   {
     heading: "Qué no separa",
     paragraphs: [
-      "Una foto, un retrato, un degradado largo o una acuarela no producen capas. La pantalla lo dice antes de armar el ZIP.",
+      "Una foto, un retrato, un degradado largo o una acuarela no producen capas de serigrafía ni corte de vinil. La pantalla dice por qué. Esa misma foto sí puede prepararse para sublimación.",
     ],
   },
   {
@@ -37,6 +37,20 @@ const sections = [
     paragraphs: [
       "La vista sobre la tela sirve para reenviarla antes de revelar. El ZIP trae una capa transparente por color, con las mismas cruces de registro, un archivo de receta y capas.psd para ver en Photoshop todas las capas una sobre otra.",
       "En tela clara el orden va de la tinta más clara a la más oscura, y el negro queda al final. En tela oscura la base blanca va primero, luego un flash, y después las tintas. El ZIP no imprime la película: eso lo hace el equipo del taller.",
+    ],
+  },
+  {
+    heading: "Vinil textil",
+    paragraphs: [
+      "Elige Vinil textil antes de preparar el archivo. Solo entra un diseño de colores sólidos. Si es una foto, un degradado o una acuarela, no hay DXF: la pantalla explica que la navaja no tiene un borde limpio.",
+      "El ZIP trae capas-vinil.dxf, en espejo, con una capa por color, y plancha-vinil.txt. El texto da el orden para planchar, la navaja, la velocidad, la máquina, el vinil y el tiempo. Es un punto de partida: si el rollo indica otro tiempo, manda el del rollo.",
+    ],
+  },
+  {
+    heading: "Sublimación",
+    paragraphs: [
+      "Elige Sublimación. La imagen sale adaptada a cian, magenta, amarillo y negro, y en espejo, lista para imprimirla en el papel.",
+      "plancha-sublimacion.txt indica el tiempo en una playera de poliéster. El algodón no retiene la sublimación.",
     ],
   },
   {
@@ -52,7 +66,7 @@ export default function ManualSeparadorPage() {
   return (
     <Manual
       title="Manual de quien sube el logo"
-      lede="Cómo separar un diseño de colores sólidos y, si quieres, mandarlo con la solicitud."
+      lede="Cómo preparar un diseño para serigrafía, vinil textil o sublimación."
       sections={sections}
     />
   );

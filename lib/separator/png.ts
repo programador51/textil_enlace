@@ -42,11 +42,11 @@ function chunk(type: string, data: Uint8Array) {
 
 async function deflate(data: Uint8Array) {
   const stream = new CompressionStream("deflate");
+  const compressed = new Response(stream.readable).arrayBuffer();
   const writer = stream.writable.getWriter();
   await writer.write(data as Uint8Array<ArrayBuffer>);
   await writer.close();
-  const compressed = await new Response(stream.readable).arrayBuffer();
-  return new Uint8Array(compressed);
+  return new Uint8Array(await compressed);
 }
 
 const CRC_TABLE = (() => {

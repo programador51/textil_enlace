@@ -27,7 +27,7 @@ const sections = [
     paragraphs: [
       "Entra a Describir un encargo. No hace falta crear una cuenta. Avanza los pasos y, al final, marca uno o varios talleres. Puedes abrir también la lista completa y escribirle a un taller de otro proceso.",
       "Al enviar, cada taller recibe el mismo texto en su lista. Además puedes abrir WhatsApp con el mensaje ya escrito, o copiarlo si el enlace no abre.",
-      "Si ya tienes el logo, adjúntalo en el paso del diseño o ábrelo en Separar tintas. Un archivo de colores sólidos arma las capas de serigrafía. Una foto no arma capas y la orientación apunta a DTF o DTG. El folio sigue sin un monto.",
+      "Si ya tienes el logo, adjúntalo en el paso del diseño o ábrelo en Separar tintas. Ahí puedes preparar serigrafía, vinil textil o sublimación. Al encargo solo se adjunta la serigrafía. Una foto no arma capas ni corte. El folio sigue sin un monto.",
     ],
   },
   {

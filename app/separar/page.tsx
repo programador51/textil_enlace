@@ -4,7 +4,7 @@ import { buildPageMetadata, SEPARATOR_OG_IMAGE, SEPARATOR_TWITTER_IMAGE } from "
 export const metadata = buildPageMetadata({
   title: "Separar tintas",
   description:
-    "Separa un logo en capas transparentes de serigrafía o cuatricromía con semitonos, base blanca, receta de impresión y archivo PSD.",
+    "Prepara un logo para serigrafía, vinil textil o sublimación: capas y PSD, DXF de corte, o imagen en cuatricromía y en espejo.",
   path: "/separar",
   ogImage: SEPARATOR_OG_IMAGE,
   twitterImage: SEPARATOR_TWITTER_IMAGE,
@@ -15,10 +15,10 @@ export default function SepararPage() {
     <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-12">
       <p className="text-sm font-bold tracking-wide text-gold uppercase">Separador de tintas planas</p>
       <h1 className="mt-2 max-w-3xl font-serif text-4xl leading-tight sm:text-5xl">
-        Sube el logo. Salen las capas, la base si la tela es oscura y la receta para imprimir.
+        Sube el logo y elige serigrafía, vinil textil o sublimación.
       </h1>
       <p className="mt-4 max-w-2xl text-lg leading-8 text-ink-soft">
-        Sirve para uno a seis colores sólidos. Si hay más de seis, se separa en cuatricromía con trama de semitonos. Una foto o un degradado largo no produce capas. Puedes usarlo solo, o adjuntar el logo al describir un encargo. No calcula un precio.
+        En serigrafía, uno a seis colores sólidos salen en capas. Si hay más de seis, se separa en cuatricromía con trama de semitonos. El vinil solo corta colores sólidos y entrega un DXF. La sublimación entrega la imagen en cuatricromía y en espejo. Una foto no produce capas ni corte. No calcula un precio.
       </p>
       <div className="mt-8">
         <SeparatorStudio mode="standalone" />
