@@ -4,7 +4,7 @@ import { buildPageMetadata, SEPARATOR_OG_IMAGE, SEPARATOR_TWITTER_IMAGE } from "
 export const metadata = buildPageMetadata({
   title: "Manual de quien sube el logo",
   description:
-    "Cómo preparar un logo para serigrafía, vinil textil o sublimación, y cómo leer las capas, el DXF y el tiempo de plancha.",
+    "Cómo preparar un logo para serigrafía, vinil textil, sublimación o bordado a máquina.",
   path: "/manual/separador",
   ogImage: SEPARATOR_OG_IMAGE,
   twitterImage: SEPARATOR_TWITTER_IMAGE,
@@ -14,7 +14,7 @@ const sections = [
   {
     heading: "Para qué sirve",
     paragraphs: [
-      "El separador prepara un logo de tres maneras. Serigrafía: una capa por tinta, base blanca si la tela es oscura, y la receta de malla, pasadas y orden. Vinil textil: un DXF con una capa por color. Sublimación: la imagen en cuatricromía y en espejo.",
+      "El separador prepara un logo de cuatro maneras. Serigrafía: una capa por tinta, base blanca si la tela es oscura, y la receta de malla, pasadas y orden. Vinil textil: un DXF con una capa por color. Sublimación: la imagen en cuatricromía y en espejo. Bordado a máquina: un archivo DST con los parámetros de costura.",
       "Se abre en el navegador, en Separar tintas. No se instala nada. La serigrafía también se puede adjuntar al describir un encargo. El vinil y la sublimación se descargan en esa pantalla.",
     ],
   },
@@ -29,7 +29,7 @@ const sections = [
   {
     heading: "Qué no separa",
     paragraphs: [
-      "Una foto, un retrato, un degradado largo o una acuarela no producen capas de serigrafía ni corte de vinil. La pantalla dice por qué. Esa misma foto sí puede prepararse para sublimación.",
+      "Una foto, un retrato, un degradado largo o una acuarela no producen capas de serigrafía, corte de vinil ni bordado. La pantalla dice por qué. Esa misma foto sí puede prepararse para sublimación.",
     ],
   },
   {
@@ -44,6 +44,13 @@ const sections = [
     paragraphs: [
       "Elige Vinil textil antes de preparar el archivo. Solo entra un diseño de colores sólidos. Si es una foto, un degradado o una acuarela, no hay DXF: la pantalla explica que la navaja no tiene un borde limpio.",
       "El ZIP trae capas-vinil.dxf, en espejo, con una capa por color, y plancha-vinil.txt. El texto da el orden para planchar, la navaja, la velocidad, la máquina, el vinil y el tiempo. Es un punto de partida: si el rollo indica otro tiempo, manda el del rollo.",
+    ],
+  },
+  {
+    heading: "Bordado a máquina",
+    paragraphs: [
+      "Elige Bordado a máquina antes de preparar el archivo. Solo entra un diseño de colores sólidos. Si es una foto, un degradado o una acuarela, no hay DST: la pantalla explica que la aguja no tiene un borde para seguir.",
+      "El ZIP trae diseno.dst, en formato Tajima y sin espejo, y parametros-bordado.txt. El texto da el orden de los hilos, la densidad, la base, la aguja, el hilo, la entretela, el aro, la velocidad y la tensión. Cose un retazo antes de la prenda.",
     ],
   },
   {
@@ -66,7 +73,7 @@ export default function ManualSeparadorPage() {
   return (
     <Manual
       title="Manual de quien sube el logo"
-      lede="Cómo preparar un diseño para serigrafía, vinil textil o sublimación."
+      lede="Cómo preparar un diseño para serigrafía, vinil textil, sublimación o bordado."
       sections={sections}
     />
   );

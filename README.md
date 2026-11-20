@@ -122,6 +122,14 @@ La aplicación usa el usuario de Postgres de esa cadena. No actives políticas q
 
 El sitio y la base quedan independientes: puedes cambiar uno sin reconstruir el otro. Corregir un texto de orientación o la ficha de un taller es un dato, no un despliegue.
 
+## Instalador de Windows sin conexión
+
+`npm run desktop:build` arma `desktop/output/TextilEnlace-Setup-0.1.0.exe`. Necesita [Inno Setup 6](https://jrsoftware.org/isinfo.php) (`winget install JRSoftware.InnoSetup`) y conexión a internet solo durante el armado.
+
+El instalador no pide permisos de administrador. Trae Node.js, el sitio compilado y PostgreSQL. El acceso directo **TextilEnlace** abre una ventana de consola, levanta la base en el puerto `54329`, el sitio en `http://localhost:3210` y abre el navegador. Al cerrar esa ventana se apaga el sitio.
+
+La primera vez crea la base, aplica las migraciones y carga los talleres de demostración. Los datos quedan en `%LOCALAPPDATA%\TextilEnlace` y se conservan al desinstalar. Ese entorno no se publica: es para usar el sitio en una sola computadora.
+
 ## Uso
 
 ### Quien encarga
@@ -135,7 +143,7 @@ El sitio y la base quedan independientes: puedes cambiar uno sin reconstruir el 
 
 El manual está en `/manual`.
 
-Si el logo ya está, ábrelo en **Separar tintas** (`/separar`) o adjúntalo en el paso del diseño. En serigrafía, uno a seis colores sólidos produce las capas y la receta. Si hay más de seis tintas, se separa en cuatricromía. El ZIP incluye `capas.psd` para abrirlo en Photoshop. Vinil textil entrega un DXF por color, y solo si el diseño es de colores sólidos. Sublimación entrega la imagen en cuatricromía y en espejo. Una foto no produce capas ni corte, y la orientación pasa a DTF o DTG. El folio guarda las capas de serigrafía y sigue sin un monto.
+Si el logo ya está, ábrelo en **Separar tintas** (`/separar`) o adjúntalo en el paso del diseño. En serigrafía, uno a seis colores sólidos produce las capas y la receta. Si hay más de seis tintas, se separa en cuatricromía. El ZIP incluye `capas.psd` para abrirlo en Photoshop. Vinil textil entrega un DXF por color, y solo si el diseño es de colores sólidos. El bordado a máquina entrega un DST con los parámetros de costura, también solo para colores sólidos. Sublimación entrega la imagen en cuatricromía y en espejo. Una foto no produce capas, corte ni puntadas, y la orientación pasa a DTF o DTG. El folio guarda las capas de serigrafía y sigue sin un monto.
 
 El manual del logo está en `/manual/separador`. Hay dos archivos de prueba en `/ejemplos/logo-tintas.svg` y `/ejemplos/degradado.svg`.
 

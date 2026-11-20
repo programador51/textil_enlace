@@ -10,12 +10,13 @@ import { buildRecipe } from "@/lib/separator/recipe";
 import { packSeparately, analyzeSeparately } from "@/lib/separator/run";
 import { printableShare, SUBLIMATION_GUIDE, sublimationImage, sublimationInstructions } from "@/lib/separator/sublimation";
 import { DEFAULT_CHOKE_MM, INITIAL_RULE, MAX_SOURCE_BYTES, type PixelBuffer, type RecipeStep } from "@/lib/separator/types";
+import { buildEmbroidery } from "@/lib/separator/embroidery";
 import { buildVinylDxf, planVinyl, vinylInstructions } from "@/lib/separator/vinyl";
-import { zipStore } from "@/lib/separator/zip";
+import { zipFileName, zipStore } from "@/lib/separator/zip";
 import type { ArtPayload } from "@/lib/separator/payload";
 
 type Fabric = "CLARA" | "OSCURA";
-type Technique = "SERIGRAFIA" | "VINIL" | "SUBLIMACION";
+type Technique = "SERIGRAFIA" | "VINIL" | "SUBLIMACION" | "BORDADO";
 
 export function SeparatorStudio({
   mode,
@@ -62,10 +63,53 @@ export function SeparatorStudio({
       heightCm: Number.isFinite(height) ? height : 0,
     });
   }, [analysis, fabric, heightCm, technique, widthCm]);
+  const embroidery = useMemo(() => {
+    if (technique !== "BORDADO" || !analysis || !raster) return null;
+    const width = Number(widthCm);
+    const height = Number(heightCm);
+    if (!Number.isFinite(width) || !Number.isFinite(height)) return null;
+    return buildEmbroidery({
+      kind: analysis.kind,
+      reason: analysis.reason,
+      inks: analysis.inks,
+      assignment: analysis.assignment,
+      width: raster.width,
+      height: raster.height,
+      widthCm: width,
+      heightCm: height,
+      fabric,
+    });
+  }, [analysis, fabric, heightCm, raster, technique, widthCm]);
+  const solidFor = technique === "VINIL" ? "vinil" : technique === "BORDADO" ? "bordado" : undefined;
   const canDownload =
-    technique === "SUBLIMACION" ? sublimated != null : technique === "VINIL" ? vinylPlan?.allowed === true : analysis?.canExport === true;
-  const downloadName =
-    technique === "VINIL" ? "vinil-textil.zip" : technique === "SUBLIMACION" ? "sublimacion.zip" : "capas-serigrafia.zip";
+    technique === "SUBLIMACION"
+      ? sublimated != null
+      : technique === "VINIL"
+        ? vinylPlan?.allowed === true
+        : technique === "BORDADO"
+          ? embroidery?.allowed === true
+          : analysis?.canExport === true;
+  const downloadName = zipFileName(file?.name ?? "");
+  const prepareLabel =
+    pending === "separar"
+      ? "Preparando…"
+      : technique === "VINIL"
+        ? "Preparar el vinil"
+        : technique === "SUBLIMACION"
+          ? "Preparar la sublimación"
+          : technique === "BORDADO"
+            ? "Preparar el bordado"
+            : "Separar tintas";
+  const downloadLabel =
+    pending === "zip"
+      ? "Armando el archivo…"
+      : technique === "VINIL"
+        ? "Descargar DXF y plancha"
+        : technique === "SUBLIMACION"
+          ? "Descargar imagen y plancha"
+          : technique === "BORDADO"
+            ? "Descargar DST y parámetros"
+            : "Descargar capas y receta";
 
   useEffect(() => {
     if (!onArt) return;
@@ -139,7 +183,8 @@ export function SeparatorStudio({
         fineThresholdMm: INITIAL_RULE.fineThresholdMm,
         fabric,
         chokeMm: fabric === "OSCURA" ? DEFAULT_CHOKE_MM : 0,
-        keepSpots: technique === "VINIL",
+        keepSpots: solidFor != null,
+        solidFor,
       });
       setRaster(drawn.buffer);
       setAnalysis(result);
@@ -155,7 +200,8 @@ export function SeparatorStudio({
     const next = mergeInks(analysis, raster, merge[0], merge[1], {
       dpi: usedDpi,
       fineThresholdMm: INITIAL_RULE.fineThresholdMm,
-      keepSpots: technique === "VINIL",
+      keepSpots: solidFor != null,
+      solidFor,
     });
     const preview = buildPreview({
       assignment: next.assignment,
@@ -185,6 +231,13 @@ export function SeparatorStudio({
       return zipStore([
         { name: "capas-vinil.dxf", data: new TextEncoder().encode(dxf) },
         { name: "plancha-vinil.txt", data: new TextEncoder().encode(vinylInstructions(vinylPlan, size)) },
+      ]);
+    }
+    if (technique === "BORDADO") {
+      if (!embroidery?.allowed || !embroidery.dst) throw new Error("Este diseño no se puede bordar.");
+      return zipStore([
+        { name: "diseno.dst", data: embroidery.dst },
+        { name: "parametros-bordado.txt", data: new TextEncoder().encode(embroidery.text) },
       ]);
     }
     if (technique === "SUBLIMACION") {
@@ -303,6 +356,7 @@ export function SeparatorStudio({
               ["SERIGRAFIA", "Serigrafía"],
               ["VINIL", "Vinil textil"],
               ["SUBLIMACION", "Sublimación"],
+              ["BORDADO", "Bordado a máquina"],
             ] as const
           ).map(([value, label]) => (
             <label key={value} className="flex items-center gap-3">
@@ -359,7 +413,7 @@ export function SeparatorStudio({
         </div>
 
         <button type="button" className="btn btn-primary justify-self-start" onClick={() => void separate()} disabled={!file || pending != null}>
-          {pending === "separar" ? "Preparando…" : technique === "VINIL" ? "Preparar el vinil" : technique === "SUBLIMACION" ? "Preparar la sublimación" : "Separar tintas"}
+          {prepareLabel}
         </button>
 
         {technique === "SERIGRAFIA" && analysis ? (
@@ -455,6 +509,70 @@ export function SeparatorStudio({
           </div>
         ) : null}
 
+        {technique === "BORDADO" && embroidery ? (
+          <div className="grid gap-4">
+            <p className={embroidery.allowed ? "notice" : "alert"} role="status">
+              {embroidery.reason}
+            </p>
+            {embroidery.allowed ? (
+              <>
+                <p>El archivo DST se cose de frente, sin espejo. El primer hilo es el área más grande.</p>
+                <div>
+                  <p className="font-semibold">Orden de los hilos</p>
+                  <ol className="mt-2 grid gap-2">
+                    {embroidery.order.map((ink, index) => (
+                      <li key={`${ink.name}-${index}`} className="flex items-center gap-2">
+                        <span className="inline-block h-3 w-3 rounded-full border border-line" style={{ background: ink.hex }} />
+                        <span>
+                          {index + 1}. {ink.name}
+                        </span>
+                      </li>
+                    ))}
+                  </ol>
+                </div>
+                <ul className="grid gap-3 text-sm leading-6">
+                  <li>
+                    <span className="font-semibold">Puntadas. </span>
+                    {embroidery.stitches}
+                  </li>
+                  <li>
+                    <span className="font-semibold">Densidad. </span>
+                    {embroidery.density}
+                  </li>
+                  <li>
+                    <span className="font-semibold">Base. </span>
+                    {embroidery.underlay}
+                  </li>
+                  <li>
+                    <span className="font-semibold">Aguja. </span>
+                    {embroidery.needle}
+                  </li>
+                  <li>
+                    <span className="font-semibold">Hilo. </span>
+                    {embroidery.thread}
+                  </li>
+                  <li>
+                    <span className="font-semibold">Entretela. </span>
+                    {embroidery.stabilizer}
+                  </li>
+                  <li>
+                    <span className="font-semibold">Aro. </span>
+                    {embroidery.hoop}
+                  </li>
+                  <li>
+                    <span className="font-semibold">Velocidad. </span>
+                    {embroidery.speed}
+                  </li>
+                  <li>
+                    <span className="font-semibold">Tensión. </span>
+                    {embroidery.tension}
+                  </li>
+                </ul>
+              </>
+            ) : null}
+          </div>
+        ) : null}
+
         {technique === "SUBLIMACION" && sublimated ? (
           <div className="grid gap-3">
             <p className="notice" role="status">
@@ -475,7 +593,7 @@ export function SeparatorStudio({
         ) : null}
         {canDownload && !zipHref ? (
           <button type="button" className="btn btn-teal justify-self-start" onClick={() => void download()} disabled={pending != null}>
-            {pending === "zip" ? "Armando el archivo…" : technique === "VINIL" ? "Descargar DXF y plancha" : technique === "SUBLIMACION" ? "Descargar imagen y plancha" : "Descargar capas y receta"}
+            {downloadLabel}
           </button>
         ) : null}
       </div>
@@ -486,6 +604,8 @@ export function SeparatorStudio({
             ? "Diseño en espejo, con el color que imprime la cuatricromía. El fondo blanco es el papel."
             : technique === "VINIL"
               ? "Vista de los colores. El corte, en espejo, va en el DXF."
+              : technique === "BORDADO"
+                ? "Vista de los colores. Las puntadas van en el archivo DST, sin espejo."
               : fabric === "OSCURA"
                 ? "Playera oscura, con base blanca debajo."
                 : "Playera clara, sin base."

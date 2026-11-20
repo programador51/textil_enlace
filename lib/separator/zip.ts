@@ -57,3 +57,10 @@ export function zipStore(files: { name: string; data: Uint8Array }[]) {
   zip.set(end, cursor);
   return zip;
 }
+
+export function zipFileName(fileName: string) {
+  const trimmed = fileName.trim();
+  const dot = trimmed.lastIndexOf(".");
+  const stem = (dot > 0 ? trimmed.slice(0, dot) : trimmed).replace(/[\\/:*?"<>|]+/g, " ").replace(/\s+/g, " ").trim();
+  return `${stem || "diseno"}.zip`;
+}

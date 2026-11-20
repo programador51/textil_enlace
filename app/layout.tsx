@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Fraunces, Outfit } from "next/font/google";
+import { CreditsBar } from "@/components/credits-bar";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import {
@@ -66,7 +67,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="es" className={`${outfit.variable} ${fraunces.variable} h-full antialiased`} data-scroll-behavior="smooth">
-      <body className="flex min-h-full flex-col">
+      <body className="flex min-h-full flex-col pb-9">
         <a
           href="#contenido"
           className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-full focus:bg-card focus:px-4 focus:py-2"
@@ -78,6 +79,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           {children}
         </div>
         <SiteFooter />
+        <CreditsBar />
       </body>
     </html>
   );

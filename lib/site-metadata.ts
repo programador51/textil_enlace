@@ -9,7 +9,7 @@ export const ROOT_OG_IMAGE = {
   url: "/opengraph-image",
   width: 1200,
   height: 630,
-  alt: "TextilEnlace · Impresión textil con talleres chicos y medianos de Monterrey",
+  alt: "TextilEnlace · Separa un logo para serigrafía, vinil, sublimación o bordado",
   type: "image/png",
 };
 
@@ -17,7 +17,7 @@ export const ROOT_TWITTER_IMAGE = {
   url: "/twitter-image",
   width: 1200,
   height: 600,
-  alt: "TextilEnlace · Impresión textil con talleres chicos y medianos de Monterrey",
+  alt: "TextilEnlace · Separa un logo para serigrafía, vinil, sublimación o bordado",
 };
 
 export const SEPARATOR_OG_IMAGE = {

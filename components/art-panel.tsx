@@ -8,6 +8,7 @@ import { applyRuleToRecipe } from "@/lib/separator/recipe";
 import { packSeparately } from "@/lib/separator/run";
 import type { StoredArt } from "@/lib/separator/payload";
 import { INITIAL_RULE, type Ink, type PrintRule, type RecipeStep } from "@/lib/separator/types";
+import { zipFileName } from "@/lib/separator/zip";
 
 export function ArtPanel({ folio, art, rule }: { folio: string; art: StoredArt; rule?: PrintRule | null }) {
   const starting = useMemo(
@@ -112,8 +113,8 @@ export function ArtPanel({ folio, art, rule }: { folio: string; art: StoredArt; 
       ) : null}
       {error ? <p className="alert mt-4">{error}</p> : null}
       {separated && zipHref ? (
-        <a className="btn btn-teal mt-4" href={zipHref} download={`${folio}-capas.zip`}>
-          Descargar {folio}-capas.zip
+        <a className="btn btn-teal mt-4" href={zipHref} download={zipFileName(art.fileName)}>
+          Descargar {zipFileName(art.fileName)}
         </a>
       ) : null}
       {separated && !zipHref ? (

@@ -40,6 +40,7 @@ export function analyzeSeparately(input: {
   fabric: "CLARA" | "OSCURA";
   chokeMm: number;
   keepSpots?: boolean;
+  solidFor?: "vinil" | "bordado";
 }) {
   const payload = {
     type: "analyze" as const,
@@ -52,6 +53,7 @@ export function analyzeSeparately(input: {
     fabric: input.fabric,
     chokeMm: input.chokeMm,
     keepSpots: input.keepSpots === true,
+    solidFor: input.solidFor,
   };
 
   return withWorker(payload, () => {
@@ -63,6 +65,7 @@ export function analyzeSeparately(input: {
         dpi: input.dpi,
         fineThresholdMm: input.fineThresholdMm,
         keepSpots: input.keepSpots === true,
+        solidFor: input.solidFor,
       },
     );
     const preview = buildPreview({

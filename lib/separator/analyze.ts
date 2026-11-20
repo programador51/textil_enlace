@@ -8,7 +8,13 @@ const MERGE_DISTANCE = 42;
 const SMALL_SHARE = 0.006;
 const PALETTE_SNAP = 72;
 
-type AnalyzeOptions = { palette?: RGB[]; dpi?: number; fineThresholdMm?: number; keepSpots?: boolean };
+type AnalyzeOptions = {
+  palette?: RGB[];
+  dpi?: number;
+  fineThresholdMm?: number;
+  keepSpots?: boolean;
+  solidFor?: "vinil" | "bordado";
+};
 
 export function analyzePixels(buffer: PixelBuffer, options?: AnalyzeOptions): Analysis {
   const { width, height, data } = buffer;
@@ -21,12 +27,12 @@ export function analyzePixels(buffer: PixelBuffer, options?: AnalyzeOptions): An
     inkIndexes.push(index);
   }
 
+  const solidFor = options?.solidFor ?? (options?.keepSpots ? "vinil" : undefined);
+
   if (inkIndexes.length === 0) {
     return emptyAnalysis(
       count,
-      options?.keepSpots
-        ? "No se vieron colores sólidos. El vinil de corte necesita un diseño con relleno, distinto del fondo."
-        : "No se vieron tintas. Revisa que el logo no sea del mismo color que el fondo.",
+      solidFor ? solidCopy(solidFor).empty : "No se vieron tintas. Revisa que el logo no sea del mismo color que el fondo.",
     );
   }
 
@@ -37,8 +43,8 @@ export function analyzePixels(buffer: PixelBuffer, options?: AnalyzeOptions): An
   if (clustered.photo) {
     return emptyAnalysis(
       count,
-      options?.keepSpots
-        ? "El vinil de corte solo acepta un diseño de colores sólidos. Esto se ve como una foto, un degradado largo o una acuarela, y la navaja no tiene un borde limpio para cortar."
+      solidFor
+        ? solidCopy(solidFor).photo
         : "Esto se ve como una foto, un degradado largo o una acuarela. No armamos pantallas de serigrafía para ese archivo.",
     );
   }
@@ -196,16 +202,13 @@ function analysisFromAssignment(
     fine: isFine(remapped, buffer.width, buffer.height, index, finePx),
   }));
 
-  if (options?.keepSpots) {
+  const solidFor = options?.solidFor ?? (options?.keepSpots ? "vinil" : undefined);
+  if (solidFor) {
     const kind: SeparationKind = simplified ? "SIMPLIFICA" : "PLANAS";
+    const copy = solidCopy(solidFor);
     return {
       kind,
-      reason:
-        kind === "SIMPLIFICA"
-          ? `Había tonos de borde o muy parecidos. Quedaron ${inks.length} colores sólidos para el vinil. Revisa el corte antes de planchar.`
-          : inks.length === 1
-            ? "Se ve un color sólido. Sirve para vinil de corte."
-            : `Se ven ${inks.length} colores sólidos. Cada uno es una capa de vinil.`,
+      reason: kind === "SIMPLIFICA" ? copy.simple(inks.length) : inks.length === 1 ? copy.one : copy.many(inks.length),
       inks,
       assignment: remapped,
       canExport: inks.length > 0,
@@ -239,6 +242,29 @@ function kindFor(inkCount: number, simplified: boolean): SeparationKind {
   if (inkCount > MAX_INKS) return "CMYK";
   if (simplified) return "SIMPLIFICA";
   return "PLANAS";
+}
+
+function solidCopy(use: "vinil" | "bordado") {
+  if (use === "bordado") {
+    return {
+      empty: "No se vieron colores sólidos. El bordado a máquina necesita un diseño con relleno, distinto del fondo.",
+      photo:
+        "El bordado a máquina solo acepta un diseño de colores sólidos. Esto se ve como una foto, un degradado largo o una acuarela: la aguja no tiene un borde para seguir.",
+      simple: (count: number) =>
+        `Había tonos de borde o muy parecidos. Quedaron ${count} colores sólidos para el bordado. Revisa las puntadas antes de coser.`,
+      one: "Se ve un color sólido. Sirve para bordado a máquina.",
+      many: (count: number) => `Se ven ${count} colores sólidos. Cada uno es un color de hilo.`,
+    };
+  }
+  return {
+    empty: "No se vieron colores sólidos. El vinil de corte necesita un diseño con relleno, distinto del fondo.",
+    photo:
+      "El vinil de corte solo acepta un diseño de colores sólidos. Esto se ve como una foto, un degradado largo o una acuarela, y la navaja no tiene un borde limpio para cortar.",
+    simple: (count: number) =>
+      `Había tonos de borde o muy parecidos. Quedaron ${count} colores sólidos para el vinil. Revisa el corte antes de planchar.`,
+    one: "Se ve un color sólido. Sirve para vinil de corte.",
+    many: (count: number) => `Se ven ${count} colores sólidos. Cada uno es una capa de vinil.`,
+  };
 }
 
 function reasonFor(kind: SeparationKind, inkCount: number) {

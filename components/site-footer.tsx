@@ -6,7 +6,7 @@ export function SiteFooter() {
       <div className="mx-auto flex max-w-6xl flex-col gap-4 px-4 py-8 text-sm text-ink-soft sm:px-6 md:flex-row md:items-center md:justify-between">
         <p>TextilEnlace · Monterrey y su área metropolitana. La cotización la hace cada taller.</p>
         <nav className="flex flex-wrap gap-4 font-semibold" aria-label="Pie">
-          <Link href="/separar">Separar tintas</Link>
+          <Link href="/">Separar tintas</Link>
           <Link href="/manual">Manual de quien encarga</Link>
           <Link href="/manual/separador">Manual del logo</Link>
           <Link href="/manual/taller">Manual del taller</Link>

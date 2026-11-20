@@ -9,7 +9,7 @@ import { encodePng } from "../lib/separator/png";
 import { encodePsd } from "../lib/separator/psd";
 import { buildRecipe } from "../lib/separator/recipe";
 import { BACKGROUND, type PixelBuffer } from "../lib/separator/types";
-import { zipStore } from "../lib/separator/zip";
+import { zipFileName, zipStore } from "../lib/separator/zip";
 
 function fill(buffer: PixelBuffer, x0: number, y0: number, x1: number, y1: number, color: [number, number, number, number]) {
   for (let y = y0; y < y1; y += 1) {
@@ -314,6 +314,13 @@ test("el archivo de capas es un ZIP con la receta y un PNG", async () => {
   const text = new TextDecoder().decode(zip);
   assert.match(text, /receta\.txt/);
   assert.match(text, /01-rojo\.png/);
+});
+
+test("el ZIP se llama igual que el archivo de entrada", () => {
+  assert.equal(zipFileName("nike.png"), "nike.zip");
+  assert.equal(zipFileName("logo-tintas.svg"), "logo-tintas.zip");
+  assert.equal(zipFileName("mi.logo.pdf"), "mi.logo.zip");
+  assert.equal(zipFileName("  "), "diseno.zip");
 });
 
 test("una foto orienta a DTF o DTG y unas tintas planas a serigrafía", () => {

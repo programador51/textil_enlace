@@ -12,7 +12,8 @@
     "db:seed": "prisma db seed",
     "db:setup": "prisma migrate deploy && prisma db seed",
     "db:studio": "prisma studio",
-    "test": "tsx --test tests/orientation.test.ts tests/no-price.test.ts tests/separator.test.ts tests/transfer.test.ts"
+    "desktop:build": "node desktop/build.mjs",
+    "test": "tsx --test tests/orientation.test.ts tests/no-price.test.ts tests/separator.test.ts tests/transfer.test.ts tests/embroidery.test.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"

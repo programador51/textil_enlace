@@ -5,7 +5,7 @@ import { MobileNav } from "@/components/mobile-nav";
 
 const links = [
   { href: "/solicitar", label: "Describir un encargo" },
-  { href: "/separar", label: "Separar tintas" },
+  { href: "/", label: "Separar tintas" },
   { href: "/talleres", label: "Talleres" },
   { href: "/manual", label: "Manual" },
 ];
